@@ -14,7 +14,7 @@ lipetsk = data.frame(id = "LIPETSK", latitude = 52.6031,  longitude = 39.5708)
 #Задание временного периода и необходимых переменных 
 lipetsk_around = meteo_nearby_stations(lat_lon_df = lipetsk, station_data = station_data, limit = 8, var = c("TAVG"), year_min = 2005, year_max = 2015)
 #Получение индентификатора метеостанций Липецка
-lipetsk_id =lipetsk_around[["LIPETSK"]][["id"]][i]
+lipetsk_id =lipetsk_around[["LIPETSK"]][["id"]][1]
 summary(lipetsk_id)
 #Получение таблицы ближайших метеостанций
 lipetsk_table = data.frame (lipetsk_around)
