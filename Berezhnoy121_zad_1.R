@@ -3,9 +3,10 @@
 #Установка и проверка рабочей директории
 setwd("C:/Rstudio")
 getwd()
+#Установление пакеты необходимые для дальнейшей работы
 library (tidyverse)
 library (rnoaa)
-#Скачиваем список метеостанций
+#Скачиваем список метеостанций и записываем их в файл
 station_data=ghcnd_stations()
 write.csv(station_data,"station_data20.csv")
 station_data = read.csv("station_data20.csv")
@@ -27,7 +28,7 @@ summary (lipetsk_table)
 all_i = data.frame()
 #Объкт куда скачиваются все данные всех метеостанций
 all_lipetsk_meteodata = data.frame()
-#Создание цикла для всех метеостанций
+#Создание цикла для всех метеостанций с 2005 по 2015 год с учетом температур
 for(i in 1:8)
 {
 all_i=meteo_tidy_ghcnd(stationid =lipetsk_id, var = "TAVG", date_min = "2005-01-01", date_max = "2015-12-31") 
@@ -59,16 +60,16 @@ mutate(tavg = tavg/10) %>%
 #Фильтруем температуру на больше 5 градусов
 filter(tavg>5) %>%
 group_by(year,month,id) %>%
-#Суммируем температуру без пустых значений
+#Суммируем температуру и убераем пустые значения
 summarise (summ = sum(tavg,na.rm=TRUE))%>%
 group_by(month) %>%
 #Считаем среднюю температуру
 summarise (s = mean (summ, na.rm = TRUE)) %>%
-#Создаем колонки для расчета
+#Создаем колонки для расчета и убераем столбцы без данных
 mutate (a = afi[min(month):max(month)], b = bfi[min(month):max(month)], d = di[min(month):max(month)]) %>%  
-#Рассчитываем урожайность по формуле
+#Рассчитываем урожайность по формуле для каждого месяца
 mutate (fert = (((a + b * 1.0 * s) * d * Kf) / (Qj * Lj * (100-Ej)))/10 )
 
-#Определяем урожайность пшеницы
+#Определяем итоговую урожайность пшеницы
 Yield = sum(dat$fert); Yield
   
