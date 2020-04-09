@@ -51,25 +51,35 @@ Ej = 25 # Стандартная влажность культуры
 install.packages(lubridate)
 library(lubridate)
 
-#Расчет суммы активных температур
-dat = all_lipetsk_meteodata %>%
-#Разбиваем дату на года и месяца
-mutate(year = year(date), month = month(date)) %>%
-#Приводим температуру к нормальному виду
-mutate(tavg = tavg/10) %>%
-#Фильтруем температуру на больше 5 градусов
-filter(tavg>5) %>%
-group_by(year,month,id) %>%
-#Суммируем температуру и убераем пустые значения
-summarise (summ = sum(tavg,na.rm=TRUE))%>%
-group_by(month) %>%
-#Считаем среднюю температуру
-summarise (s = mean (summ, na.rm = TRUE)) %>%
-#Создаем колонки для расчета и убераем столбцы без данных
-mutate (a = afi[min(month):max(month)], b = bfi[min(month):max(month)], d = di[min(month):max(month)]) %>%  
-#Рассчитываем урожайность по формуле для каждого месяца
-mutate (fert = (((a + b * 1.0 * s) * d * Kf) / (Qj * Lj * (100-Ej)))/10 )
+#Создание датафрейма с данными 
+all_lipetsk_meteodata=read.csv("all_lipetsk_meteodata.csv")
+all_lipetsk_meteodata [,"year"] = year (all_lipetsk_meteodata$date)
+all_lipetsk_meteodata [,"month"] = month (all_lipetsk_meteodata$date)
+all_lipetsk_meteodata [,"day_of_the_year"] = yday(all_lipetsk_meteodata$date)
+years_lipetsk_meteodata = filter (all_lipetsk_meteodata, year>2005 & year<2015)
 
-#Определяем итоговую урожайность пшеницы
-Yield = sum(dat$fert); Yield
-  
+#Подсчет средних активных температур по месяцам, приводим к нормальному виду, превращаем в 0 все NA и значения меньше 5 градусов
+years_lipetsk_meteodata [,"tavg"] = years_lipetsk_meteodata$tavg/10
+years_lipetsk_meteodata [is.na(years_lipetsk_meteodata$tavg),"tavg"] = 0
+years_lipetsk_meteodata [years_lipetsk_meteodata$tavg<5, "tavg"] = 0
+
+#Проверяем, какие данные получились
+summary(years_lipetsk_meteodata)
+
+#Считаем суммарную температуру за месяц для всех станций
+#Группируем по id станциям, годами и месяцам
+alldays=group_by (years_lipetsk_meteodata,id,year,month)
+#Суммируем температуру по этим группам
+sum_t=summarize (alldays, tsum = sum(tavg))
+#Группируем данные по месяцам
+group_months=group_by(sum_t,month)
+#Находим для метеостанций среднее по месяцам
+sum_t_months=summarize(group_months, St = mean(tsum))
+#Рассчитываем Fi по месяцам
+sum_t_months = mutate(sum_t_months, Fi = afi+bfi*1*St)
+#Рассчитываем Yi
+sum_t_months = mutate (sum_t_months, Yi = ((Fi*di)*Kf)/(Qj*Lj*(100-Ej)))
+#Рассчитываем урожай как сумму по месяцам
+Yield = sum(sum_t_months$Yi)
+Yield
+Результат = 14,79 ц/га урожайность пшеницы
