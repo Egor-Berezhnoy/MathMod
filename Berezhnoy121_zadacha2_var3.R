@@ -121,6 +121,7 @@ mod3 = lm ( co2_flux~ DOY + Tau + qc_Tau + rand_err_Tau + H + qc_H + rand_err_H 
 
 
 
+
 #Информация о модели
 summary(mod3)
 #Коэффициент модели
